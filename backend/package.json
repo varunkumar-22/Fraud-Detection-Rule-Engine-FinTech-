@@ -1,18 +1,32 @@
 {
+  "name": "fraud-detection-backend",
+  "version": "1.0.0",
+  "description": "Fraud Detection Rule Engine - Backend",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start": "ts-node src/index.ts",
+    "migrate": "ts-node src/db/migrate.ts",
+    "test": "jest --runInBand"
+  },
   "dependencies": {
+    "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.18.0",
-    "pg": "^8.11.0"
+    "pg": "^8.11.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^4.17.0",
+    "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
     "@types/pg": "^8.10.0",
+    "@types/supertest": "^6.0.0",
+    "jest": "^29.5.0",
+    "supertest": "^6.3.0",
+    "ts-jest": "^29.1.0",
     "ts-node": "^10.9.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.0.0"
-  },
-  "scripts": {
-    "migrate": "ts-node src/db/migrate.ts"
   }
 }
