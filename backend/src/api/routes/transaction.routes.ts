@@ -1,8 +1,11 @@
 import { Router } from 'express';
+import { validate } from '../middlewares/validate.middleware';
+import { transactionInputSchema } from '../../schemas/transaction.schema';
+import { evaluate } from '../controllers/transaction.controller';
 
 const router = Router();
 
-// POST /api/transactions/evaluate — wired in Issue 3
-// POST /api/transactions           — wired in Issue 3
+// POST /api/transactions/evaluate
+router.post('/evaluate', validate(transactionInputSchema), evaluate);
 
 export default router;
