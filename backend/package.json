@@ -6,6 +6,9 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "start": "ts-node src/index.ts",
     "migrate": "ts-node src/db/migrate.ts",
+    "seed:rules": "ts-node src/db/seeds/rules.seed.ts",
+    "seed:transactions": "ts-node src/db/seeds/transactions.seed.ts",
+    "seed": "npm run seed:rules && npm run seed:transactions",
     "test": "jest --runInBand"
   },
   "dependencies": {
