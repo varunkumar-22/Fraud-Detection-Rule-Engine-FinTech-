@@ -3,13 +3,22 @@
 A near real-time fraud decision engine for digital transactions.  
 It evaluates every transaction against configurable PostgreSQL-backed rules, computes a weighted risk score, and returns an explainable decision.
 
+## At a Glance
+
+- **What it does:** evaluates each transaction and classifies it as `ALLOW`, `REVIEW`, or `BLOCK`
+- **How rules are managed:** rules live in PostgreSQL and can be changed via APIs without changing code
+- **Why it is useful:** faster fraud-logic updates, deterministic behavior, and explainable outcomes
+- **Who this is for:** developers building or extending fintech risk controls and rule operations
+
 ## Why This Project
 
-- **Project Type:** OJT Application Developer
-- **Team:** Sriram Varun Kumar, Binayak Das
-- **Stack:** Node.js, TypeScript, Express.js, PostgreSQL, Zod, Jest
+Fraud patterns evolve faster than release cycles in most transactional systems. Hardcoded fraud checks make updates slow, risky, and difficult to scale across teams.
 
-The goal is simple: keep fraud logic dynamic (DB-driven, not hardcoded), deterministic, and explainable so teams can adapt quickly as fraud behavior changes.
+This project is built to solve that by making fraud logic configurable, deterministic, and explainable:
+
+- **Configurable:** rules are managed in the database and can be updated without changing application code
+- **Deterministic:** the same input and same active rules always produce the same result
+- **Explainable:** every decision includes triggered-rule reasoning and score contribution for auditability
 
 ## Problem It Solves
 
@@ -32,6 +41,23 @@ This system addresses that by:
 - Structured logging and alerting for high-risk cases
 - Transaction simulation endpoint for scenario testing
 - Evaluation result history APIs
+
+## Rule Engine Deep Dive
+
+The engine supports 3 rule families:
+
+- **Threshold rules:** evaluate transaction fields like `amount`, `location`, and `device_id`
+- **Temporal rules:** evaluate time-derived values such as `hour_of_day` and `day_of_week`
+- **Velocity rules:** evaluate rolling-window behavior such as transaction counts/amounts
+
+Supported operators include:
+
+- `gt`, `lt`, `gte`, `lte`, `eq`, `neq`
+- `in`, `not_in` (set-based matching)
+- `range` (min-max)
+- `regex` (pattern match)
+
+Rules are prioritized and evaluated deterministically. Triggered rules contribute their `weight` to the final risk score.
 
 ## How It Works
 
@@ -56,6 +82,52 @@ Transaction Input (API/UI)
   - `BLOCK`: score >= 70
 - Alert generated for high-risk transactions (`score >= 70`)
 - Idempotent handling to prevent duplicate evaluation of the same transaction
+
+## Request and Response Example
+
+Example evaluation request:
+
+```json
+{
+  "user_id": "2f73907b-3520-4dfb-b9aa-77fb8f84f101",
+  "amount": 15000,
+  "location": "RU",
+  "device_id": "device-001",
+  "transaction_time": "2026-04-12T02:30:00Z",
+  "is_simulation": false
+}
+```
+
+Typical successful API response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "tx_id": "7a1cfde9-b4f2-4e2e-8fa5-36f94fdf640f",
+    "decision": "BLOCK",
+    "risk_score": 90,
+    "triggered_rules": [
+      {
+        "rule_id": "rule-001",
+        "rule_name": "High Amount",
+        "rule_type": "threshold",
+        "weight_applied": 50,
+        "reason": "amount (15000) gt 10000"
+      }
+    ],
+    "score_breakdown": [
+      {
+        "rule_name": "High Amount",
+        "weight": 50,
+        "reason": "amount (15000) gt 10000"
+      }
+    ],
+    "evaluation_time": "2026-04-12T02:30:01.000Z",
+    "is_alert_generated": true
+  }
+}
+```
 
 ## API Endpoints
 
@@ -90,6 +162,14 @@ Base URL: `http://localhost:3000`
 └── postman/            # Postman collection
 ```
 
+## Key Database Entities
+
+- `transactions`: raw incoming transaction records
+- `fraud_rules`: active/inactive rule definitions with type, operator, threshold, weight, and priority
+- `risk_logs`: final decision outputs per evaluated transaction
+- `rule_evaluation_trace`: triggered-rule audit trail for explainability
+- `velocity_tracking` and related stats tables: supports temporal/velocity checks
+
 ## Quick Start
 
 ```bash
@@ -118,6 +198,14 @@ npm run seed
 npm run dev
 ```
 
+Server runs at `http://localhost:3000` by default.
+
+Quick health check:
+
+```bash
+curl http://localhost:3000/health
+```
+
 ## Scripts
 
 - `npm run dev` - start server in watch mode
@@ -138,6 +226,13 @@ Current test strategy:
 
 Target outcome: deterministic decisions, explainable traces, and near real-time response latency.
 
+To run tests:
+
+```bash
+cd backend
+npm test
+```
+
 ## Roadmap (Next)
 
 Planned extensions from the PRD:
@@ -149,3 +244,13 @@ Planned extensions from the PRD:
 ## API Testing
 
 Use `postman/FraudDetectionAPI.collection.json` to verify API flows and demo scenarios.
+
+## Contributor Onboarding (Recommended Path)
+
+If you are new to the project, follow this order:
+
+1. Run `Quick Start` and verify `/health`
+2. Read `backend/src/app.ts` to understand route wiring
+3. Read `backend/src/services/transaction.service.ts` for end-to-end orchestration
+4. Read `backend/src/engine/decisionEngine.ts` and `backend/src/engine/ruleEvaluator.ts`
+5. Run `npm test` and inspect scenario tests under `backend/tests/scenarios`
