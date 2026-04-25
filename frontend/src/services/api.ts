@@ -41,5 +41,8 @@ export const getResults = (params?: { limit?: number; offset?: number; decision?
   const query = qs.toString() ? `?${qs}` : '';
   return fetch(`${BASE}/results${query}`, { headers: { 'Content-Type': 'application/json' } })
     .then(r => r.json())
-    .then(j => ({ results: j.data as EvaluationSummary[], total: j.meta?.total ?? 0 }));
+    .then(j => {
+      if (!j.success) throw new Error(j.error ?? 'Request failed');
+      return { results: (j.data ?? []) as EvaluationSummary[], total: j.meta?.total ?? 0 };
+    });
 };
