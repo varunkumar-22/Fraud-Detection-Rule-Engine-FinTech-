@@ -41,8 +41,8 @@ async function persistEvaluation(output: ExplainableOutput): Promise<void> {
 
   if (output.triggered_rules.length > 0) {
     const values = output.triggered_rules.map((_, i) => {
-      const base = i * 5;
-      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+      const base = i * 6;
+      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`;
     }).join(', ');
 
     const params = output.triggered_rules.flatMap(r => [
@@ -50,11 +50,12 @@ async function persistEvaluation(output: ExplainableOutput): Promise<void> {
       r.rule_id,
       r.rule_name,
       r.rule_type,
+      r.weight_applied,
       r.reason,
     ]);
 
     await pool.query(
-      `INSERT INTO rule_evaluation_trace (tx_id, rule_id, rule_name, rule_type, reason)
+      `INSERT INTO rule_evaluation_trace (tx_id, rule_id, rule_name, rule_type, weight_applied, reason)
        VALUES ${values}`,
       params
     );
