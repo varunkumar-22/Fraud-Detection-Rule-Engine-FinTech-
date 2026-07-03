@@ -3,6 +3,13 @@
 A near real-time fraud decision engine for digital transactions.  
 It evaluates every transaction against configurable PostgreSQL-backed rules, computes a weighted risk score, and returns an explainable decision.
 
+## Tech Stack
+
+- **Backend:** Node.js, TypeScript, Express.js, PostgreSQL, Zod
+- **Frontend:** React 18, Vite, React Router v6
+- **Testing:** Jest, ts-jest, Supertest
+- **Dev tooling:** ts-node, ts-node-dev, Docker (local PostgreSQL)
+
 ## At a Glance
 
 - **What it does:** evaluates each transaction and classifies it as `ALLOW`, `REVIEW`, or `BLOCK`
@@ -85,16 +92,15 @@ Transaction Input (API/UI)
 
 ## Request and Response Example
 
-Example evaluation request:
+Example evaluation request (uses Alice — a user created by `npm run seed`):
 
 ```json
 {
-  "user_id": "2f73907b-3520-4dfb-b9aa-77fb8f84f101",
+  "user_id": "a1b2c3d4-0001-0001-0001-000000000001",
   "amount": 15000,
   "location": "RU",
   "device_id": "device-001",
-  "transaction_time": "2026-04-12T02:30:00Z",
-  "is_simulation": false
+  "transaction_time": "2026-04-12T02:30:00Z"
 }
 ```
 
@@ -157,7 +163,7 @@ Base URL: `http://localhost:3000`
 │   │   ├── db/         # client, migrations, seed scripts
 │   │   └── schemas/    # Zod request schemas
 │   └── tests/          # unit, scenario, integration tests
-├── frontend/           # dashboard and simulation UI scaffold
+├── frontend/           # React 18 + Vite UI — Dashboard, Rules Management, Simulate pages
 ├── docs/               # PRD/API/DB docs
 └── postman/            # Postman collection
 ```
@@ -172,25 +178,51 @@ Base URL: `http://localhost:3000`
 
 ## Quick Start
 
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) v18 or later
+- [Docker](https://www.docker.com/products/docker-desktop/) (for local PostgreSQL)
+- Git
+
+### Step 1 — Clone the repository
+
 ```bash
 git clone https://github.com/varunkumar-22/Fraud-Detection-Rule-Engine-FinTech-.git
-cd Fraud-Detection-Rule-Engine-FinTech-/backend
+cd Fraud-Detection-Rule-Engine-FinTech-
+```
+
+### Step 2 — Start PostgreSQL via Docker
+
+```bash
+docker run -d \
+  --name fraud-pg \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=fraud_detection \
+  -p 5432:5432 \
+  postgres:15-alpine
+```
+
+### Step 3 — Set up the backend
+
+```bash
+cd backend
 npm install
 cp .env.example .env
 ```
 
-Set values in `backend/.env`:
+The default `.env` values match the Docker container above — no changes needed if you used the command as-is:
 
 ```env
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=fraud_detection
 DB_USER=postgres
-DB_PASSWORD=your_password
+DB_PASSWORD=postgres
 PORT=3000
 ```
 
-Run database setup and start the service:
+Run migrations, seed data, and start the server:
 
 ```bash
 npm run migrate
@@ -198,15 +230,28 @@ npm run seed
 npm run dev
 ```
 
-Server runs at `http://localhost:3000` by default.
-
-Quick health check:
+Backend runs at `http://localhost:3000`. Quick health check:
 
 ```bash
 curl http://localhost:3000/health
 ```
 
+### Step 4 — Set up the frontend
+
+Open a new terminal tab and navigate to the repo root:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173` — open that in your browser.  
+It proxies all `/api` calls to the backend automatically.
+
 ## Scripts
+
+All scripts run from the `backend/` directory:
 
 - `npm run dev` - start server in watch mode
 - `npm run start` - start server once
@@ -218,11 +263,11 @@ curl http://localhost:3000/health
 
 ## Testing
 
-Current test strategy:
+Current test strategy — **105 tests** across 3 layers:
 
-- unit tests for rule evaluation and scoring correctness
-- scenario-based tests for expected fraud outcomes
-- integration tests for end-to-end API and persistence behavior
+- **Unit tests** — rule evaluation and scoring correctness
+- **Scenario tests** — expected fraud outcomes end-to-end
+- **Integration tests** — all 4 API endpoints (`/evaluate`, `/simulate`, `/rules`, `/results`) covering response shape, decision correctness, validation errors, pagination, and DB persistence guarantees
 
 Target outcome: deterministic decisions, explainable traces, and near real-time response latency.
 
